@@ -1,0 +1,17 @@
+.skip{position:absolute;top:-80px;left:16px;z-index:100;background:var(--paper);padding:12px}.skip:focus{top:12px}.serial{color:var(--muted);font-size:13px;margin-top:22px}.hero .intro{max-width:590px}.book-mark{font-size:68px}.book-mark span{font-size:26px;letter-spacing:7px;white-space:nowrap}.book-mark small{letter-spacing:2px}.architecture{margin:32px 0;border:1px solid var(--line);border-radius:9px;background:var(--paper);overflow:hidden;max-width:100%}.diagram-frame{overflow-x:auto;overscroll-behavior-x:contain}.diagram-frame img{display:block;width:100%;min-width:620px;height:auto;border-radius:0}.architecture figcaption{display:flex;justify-content:space-between;gap:12px;padding:12px 16px;border-top:1px solid var(--line);font-size:12px;line-height:1.7;color:var(--muted);flex-wrap:wrap}.architecture figcaption a{white-space:nowrap}.original-diagram{margin:18px 0;font-size:14px}.original-diagram summary{cursor:pointer;color:var(--accent)}.coming{display:flex;gap:25px;padding:28px;margin-top:28px;border:1px dashed var(--line);border-radius:6px}.coming .eyebrow{margin-top:0}.coming h3{line-height:1.65}.coming p{font-size:14px;line-height:1.8;color:var(--muted)}.coming a{font-size:14px;color:var(--accent)}.standalone{padding-top:40px;padding-bottom:60px;max-width:900px}.standalone>article{margin-top:32px}.chapter-nav{align-items:flex-start}.chapter-nav a{line-height:1.7}footer p{margin:8px 0 0;font-size:12px}footer a:hover{text-decoration:underline}button:disabled{opacity:.45;cursor:default}.reader-layout>main{min-width:0}article h2,article h3{scroll-margin-top:24px}article blockquote{font-size:.94em}article pre{max-width:100%}
+@media(min-width:951px){.hero .intro{max-width:calc(100% - 330px)}}
+@media(max-width:700px){.coming{padding:22px 16px;gap:16px}.brand{font-size:21px}.controls{gap:6px}.diagram-frame img{min-width:600px}.architecture figcaption{padding:10px 12px}.chapter-nav{gap:16px}.chapter-nav a{font-size:14px;max-width:50%}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.card{transition:none}.card:hover{transform:none}}
+
+/* Production incidents: orange-red accents across all reading backgrounds. */
+:root{--accent:#a63e23;--text:#302b28;--muted:#74665c;--line:#e3d8cd;--bg:#faf5ed;--paper:#fffcf7}
+:root[data-theme=white]{--accent:#a63e23;--text:#292525;--muted:#6c6060;--line:#e6dfda}
+:root[data-theme=dark]{--accent:#f3a07d;--text:#f2e5dd;--muted:#c5afa3;--line:#584237;--bg:#241e1b;--paper:#302620;color-scheme:dark}
+pre{background:#2d2421;color:#f6e8df}
+.book-mark{top:90px;width:245px;height:340px;background:#a53d24;border-left:9px solid #792d1d;box-shadow:12px 15px 0 #ecd6c6;transform:rotate(4deg);padding:25px;color:#fff2df;font-family:Georgia,"Songti SC",SimSun,serif}
+.book-mark small{margin:0;font:10px/1.5 system-ui;letter-spacing:2px}
+.book-mark b{display:block;font-size:63px;line-height:1.15;margin-top:21px;letter-spacing:8px}
+.book-mark span{font-size:17px;letter-spacing:2px;margin-top:20px}
+.book-mark em{display:block;font:11px/1.5 system-ui;letter-spacing:1px;margin-top:25px}
+.figure-links{display:flex;gap:18px;flex-wrap:wrap}
+.architecture figcaption .figure-links a{white-space:nowrap}

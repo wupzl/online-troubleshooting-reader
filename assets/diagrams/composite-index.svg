@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 377" role="img" aria-labelledby="title desc">
+<title id="title">联合索引是有序的组合键</title><desc id="desc">逻辑顺序示意，并非真实 B+ 树页面结构。索引 (status, created_at DESC, id DESC)：先按 status 分组，再在组内按时间与 ID 倒序；status = 0：created_at DESC → id DESC / status = 1：created_at DESC → id DESC</desc>
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#a44b32"/></marker></defs>
+<style>text{font-family:"Microsoft YaHei","Noto Sans CJK SC",sans-serif;fill:#302b28}.detail{font-size:15px;fill:#69605b}.title{font-size:25px;font-weight:700}.label{font-size:19px;font-weight:650}</style>
+<rect width="900" height="377" rx="12" fill="#fffaf4"/>
+<text x="32" y="44" class="title">联合索引是有序的组合键</text>
+<text x="32" y="76" class="detail">逻辑顺序示意，并非真实 B+ 树页面结构</text>
+<rect x="32.0" y="108" width="836.0" height="96" rx="7" fill="#fff" stroke="#e1cec0"/>
+<text x="450.0" y="138" text-anchor="middle" class="label">索引 (status, created_at DESC, id DESC)</text>
+<text x="450.0" y="164" text-anchor="middle" class="detail">先按 status 分组，再在组内按时间与 ID 倒序</text>
+<path d="M450.0 206 L236.5 230" stroke="#a44b32" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+<rect x="32.0" y="234" width="409.0" height="96" rx="7" fill="#fff" stroke="#e1cec0"/>
+<text x="236.5" y="264" text-anchor="middle" class="label">status = 0</text>
+<text x="236.5" y="290" text-anchor="middle" class="detail">created_at DESC → id</text>
+<text x="236.5" y="312" text-anchor="middle" class="detail">DESC</text>
+<path d="M450.0 206 L663.5 230" stroke="#a44b32" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+<rect x="459.0" y="234" width="409.0" height="96" rx="7" fill="#fff" stroke="#e1cec0"/>
+<text x="663.5" y="264" text-anchor="middle" class="label">status = 1</text>
+<text x="663.5" y="290" text-anchor="middle" class="detail">created_at DESC → id</text>
+<text x="663.5" y="312" text-anchor="middle" class="detail">DESC</text>
+</svg>

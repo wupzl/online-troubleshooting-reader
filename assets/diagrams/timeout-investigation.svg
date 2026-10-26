@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 629" role="img" aria-labelledby="title desc">
+<title id="title">CPU 不高、接口超时的调查路线</title><desc id="desc">工程示意 · 按证据分析，结合实际配置验证。影响范围 / 证据 / 止血：结合版本、实例、业务影响决定恢复措施；多份 Thread Dump + 资源指标：连续采样；关联线程池、连接池与下游调用；BLOCKED：查监视器与锁持有者 / WAITING / TIMED_WAITING：查 Future、连接池、条件与超时 / RUNNABLE：结合 CPU、I/O 与原生栈；验证根因 → 修复 → 压测 → 灰度 → 复盘：不能只凭某个瞬时状态下结论</desc>
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#a44b32"/></marker></defs>
+<style>text{font-family:"Microsoft YaHei","Noto Sans CJK SC",sans-serif;fill:#302b28}.detail{font-size:15px;fill:#69605b}.title{font-size:25px;font-weight:700}.label{font-size:19px;font-weight:650}</style>
+<rect width="900" height="629" rx="12" fill="#fffaf4"/>
+<text x="32" y="44" class="title">CPU 不高、接口超时的调查路线</text>
+<text x="32" y="76" class="detail">工程示意 · 按证据分析，结合实际配置验证</text>
+<rect x="32.0" y="108" width="836.0" height="96" rx="7" fill="#fff" stroke="#e1cec0"/>
+<text x="450.0" y="138" text-anchor="middle" class="label">影响范围 / 证据 / 止血</text>
+<text x="450.0" y="164" text-anchor="middle" class="detail">结合版本、实例、业务影响决定恢复措施</text>
+<path d="M450.0 206 L450.0 230" stroke="#a44b32" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+<rect x="32.0" y="234" width="836.0" height="96" rx="7" fill="#fff" stroke="#e1cec0"/>
+<text x="450.0" y="264" text-anchor="middle" class="label">多份 Thread Dump + 资源指标</text>
+<text x="450.0" y="290" text-anchor="middle" class="detail">连续采样；关联线程池、连接池与下游调用</text>
+<path d="M450.0 332 L165.33333333333334 356" stroke="#a44b32" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+<rect x="32.0" y="360" width="266.6666666666667" height="96" rx="7" fill="#fff" stroke="#e1cec0"/>
+<text x="165.33333333333334" y="390" text-anchor="middle" class="label">BLOCKED</text>
+<text x="165.33333333333334" y="416" text-anchor="middle" class="detail">查监视器与锁持有者</text>
+<path d="M450.0 332 L450.0 356" stroke="#a44b32" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+<rect x="316.6666666666667" y="360" width="266.6666666666667" height="96" rx="7" fill="#fff" stroke="#e1cec0"/>
+<text x="450.0" y="390" text-anchor="middle" class="label">WAITING / TIMED_WAITING</text>
+<text x="450.0" y="416" text-anchor="middle" class="detail">查 Future、连接池、条</text>
+<text x="450.0" y="438" text-anchor="middle" class="detail">件与超时</text>
+<path d="M450.0 332 L734.6666666666667 356" stroke="#a44b32" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+<rect x="601.3333333333334" y="360" width="266.6666666666667" height="96" rx="7" fill="#fff" stroke="#e1cec0"/>
+<text x="734.6666666666667" y="390" text-anchor="middle" class="label">RUNNABLE</text>
+<text x="734.6666666666667" y="416" text-anchor="middle" class="detail">结合 CPU、I/O</text>
+<text x="734.6666666666667" y="438" text-anchor="middle" class="detail">与原生栈</text>
+<path d="M165.33333333333334 458 L450.0 482" stroke="#a44b32" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+<path d="M450.0 458 L450.0 482" stroke="#a44b32" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+<path d="M734.6666666666667 458 L450.0 482" stroke="#a44b32" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+<rect x="32.0" y="486" width="836.0" height="96" rx="7" fill="#fff" stroke="#e1cec0"/>
+<text x="450.0" y="516" text-anchor="middle" class="label">验证根因 → 修复 → 压测 → 灰度 → 复盘</text>
+<text x="450.0" y="542" text-anchor="middle" class="detail">不能只凭某个瞬时状态下结论</text>
+</svg>

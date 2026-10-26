@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 629" role="img" aria-labelledby="title desc">
+<title id="title">领券请求链路与调查边界</title><desc id="desc">工程示意 · 按证据分析，结合实际配置验证。浏览器 / App：用户发起领券请求；Nginx / API Gateway：鉴权、限流、转发与超时；Spring Boot 业务服务：线程池、JVM 与业务逻辑；Redis：缓存与库存 / MySQL：事务与业务数据 / RabbitMQ：异步履约任务</desc>
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#a44b32"/></marker></defs>
+<style>text{font-family:"Microsoft YaHei","Noto Sans CJK SC",sans-serif;fill:#302b28}.detail{font-size:15px;fill:#69605b}.title{font-size:25px;font-weight:700}.label{font-size:19px;font-weight:650}</style>
+<rect width="900" height="629" rx="12" fill="#fffaf4"/>
+<text x="32" y="44" class="title">领券请求链路与调查边界</text>
+<text x="32" y="76" class="detail">工程示意 · 按证据分析，结合实际配置验证</text>
+<rect x="32.0" y="108" width="836.0" height="96" rx="7" fill="#fff" stroke="#e1cec0"/>
+<text x="450.0" y="138" text-anchor="middle" class="label">浏览器 / App</text>
+<text x="450.0" y="164" text-anchor="middle" class="detail">用户发起领券请求</text>
+<path d="M450.0 206 L450.0 230" stroke="#a44b32" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+<rect x="32.0" y="234" width="836.0" height="96" rx="7" fill="#fff" stroke="#e1cec0"/>
+<text x="450.0" y="264" text-anchor="middle" class="label">Nginx / API Gateway</text>
+<text x="450.0" y="290" text-anchor="middle" class="detail">鉴权、限流、转发与超时</text>
+<path d="M450.0 332 L450.0 356" stroke="#a44b32" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+<rect x="32.0" y="360" width="836.0" height="96" rx="7" fill="#fff" stroke="#e1cec0"/>
+<text x="450.0" y="390" text-anchor="middle" class="label">Spring Boot 业务服务</text>
+<text x="450.0" y="416" text-anchor="middle" class="detail">线程池、JVM 与业务逻辑</text>
+<path d="M450.0 458 L165.33333333333334 482" stroke="#a44b32" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+<rect x="32.0" y="486" width="266.6666666666667" height="96" rx="7" fill="#fff" stroke="#e1cec0"/>
+<text x="165.33333333333334" y="516" text-anchor="middle" class="label">Redis</text>
+<text x="165.33333333333334" y="542" text-anchor="middle" class="detail">缓存与库存</text>
+<path d="M450.0 458 L450.0 482" stroke="#a44b32" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+<rect x="316.6666666666667" y="486" width="266.6666666666667" height="96" rx="7" fill="#fff" stroke="#e1cec0"/>
+<text x="450.0" y="516" text-anchor="middle" class="label">MySQL</text>
+<text x="450.0" y="542" text-anchor="middle" class="detail">事务与业务数据</text>
+<path d="M450.0 458 L734.6666666666667 482" stroke="#a44b32" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+<rect x="601.3333333333334" y="486" width="266.6666666666667" height="96" rx="7" fill="#fff" stroke="#e1cec0"/>
+<text x="734.6666666666667" y="516" text-anchor="middle" class="label">RabbitMQ</text>
+<text x="734.6666666666667" y="542" text-anchor="middle" class="detail">异步履约任务</text>
+</svg>

@@ -1,0 +1,379 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="color-scheme" content="light dark"><meta name="description" content="生产环境：永不熄灭的服务器。跟随林川与陈默，在故事中学习 Java 线上事故排查。现有 4 章，连载中，第五章待续。"><title>凌晨两点，服务器突然失联 · 生产环境</title><script>try{document.documentElement.dataset.theme=localStorage.getItem('reader-theme')||'white';document.documentElement.style.setProperty('--reading-size',Math.max(16,Math.min(26,Number(localStorage.getItem('reader-size'))||18))+'px')}catch(e){}</script><link rel="stylesheet" href="style.css"><link rel="stylesheet" href="shelf-nav.css"><link rel="stylesheet" href="reader.css"><script src="app.js" defer></script></head>
+<body class="reading"><a class="skip" href="#main">跳到正文</a><header><a class="brand" href="index.html">生产环境<span>ALWAYS ON</span></a><nav class="shelf-nav" aria-label="学习项目导航"><a class="shelf-home" href="/">← 学习书架</a><details class="shelf-switch"><summary>切换项目 ▾</summary><div class="shelf-menu"><a href="/pytorch-apprentice/">PyTorch：炼金术士的学徒</a><a href="/ai-era-reader/">AI 纪元</a><a href="/data-empire-reader/">数据帝国</a><a href="/rag-empire-reader/">RAG 帝国</a><a href="/system-design-reader/">系统设计</a><a href="/online-troubleshooting-reader/" aria-current="page">生产环境</a></div></details></nav><div class="controls"><button id="smaller" aria-label="缩小字号" type="button">A−</button><button id="larger" aria-label="增大字号" type="button">A＋</button><button id="theme" aria-label="切换阅读背景" type="button">纯白</button></div></header>
+<div class="reader-layout"><aside><a href="index.html">← 全书目录</a><p class="eyebrow">本章导航</p><div class="toc">
+<ul>
+<li><a href="#_1">第一幕：一条来自生产环境的警报</a></li>
+<li><a href="#_3">第二幕：第一条线索——到底是谁出了问题？</a></li>
+<li><a href="#cpu-100">第三幕：CPU 100%，就一定是死循环吗？</a></li>
+<li><a href="#_6">第四幕：隐藏在循环里的杀手</a></li>
+<li><a href="#_7">第五幕：真正的线上排查方法论</a></li>
+<li><a href="#cpu_1">本章技术档案：CPU 异常排查速查</a></li>
+<li><a href="#_9">后续章节规划 · 尚未发布</a></li>
+</ul>
+</div>
+</aside><main id="main"><div class="chapter-heading"><p class="eyebrow">CHAPTER 01 / 04 · 第一卷 · 线上事故调查局</p><h1>凌晨两点，服务器突然失联</h1><p>CPU 热点 · 线程快照 · 回滚与复盘</p></div><details class="mobile-toc"><summary>展开本章目录</summary><div class="toc">
+<ul>
+<li><a href="#_1">第一幕：一条来自生产环境的警报</a></li>
+<li><a href="#_3">第二幕：第一条线索——到底是谁出了问题？</a></li>
+<li><a href="#cpu-100">第三幕：CPU 100%，就一定是死循环吗？</a></li>
+<li><a href="#_6">第四幕：隐藏在循环里的杀手</a></li>
+<li><a href="#_7">第五幕：真正的线上排查方法论</a></li>
+<li><a href="#cpu_1">本章技术档案：CPU 异常排查速查</a></li>
+<li><a href="#_9">后续章节规划 · 尚未发布</a></li>
+</ul>
+</div>
+</details><article><h2 id="_1">第一幕：一条来自生产环境的警报</h2>
+<p>凌晨 2:17。</p>
+<p>星海科技总部，二十三楼。</p>
+<p>整个研发中心已经空无一人，只有服务器机房的散热风扇还在持续轰鸣。</p>
+<p>突然，一条告警打破了寂静。</p>
+<h3 id="_2">事故快照 · 虚构场景</h3>
+<table>
+<thead>
+<tr>
+<th>项目</th>
+<th>观测值</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>等级与时间</td>
+<td>P1 · 2026-10-16 02:17:34</td>
+</tr>
+<tr>
+<td>服务</td>
+<td>benefit-service-prod</td>
+</tr>
+<tr>
+<td>错误率</td>
+<td>38.6%</td>
+</tr>
+<tr>
+<td>P99 延迟</td>
+<td>12.8s</td>
+</tr>
+<tr>
+<td>CPU</td>
+<td>96%</td>
+</tr>
+<tr>
+<td>异常</td>
+<td>HTTP 500 / 504 激增，实例健康检查失败</td>
+</tr>
+</tbody>
+</table>
+<p>值班工程师林川被手机震醒。</p>
+<p>他刚入职三个月，主要负责公司基于 Spring Boot、MySQL、Redis 和 RabbitMQ 构建的营销权益发放系统。</p>
+<p>手机再次震动。</p>
+<p>技术负责人陈默发来消息：</p>
+<p>“林川，生产出问题了。用户领不了优惠券，你先看一下。”</p>
+<p>林川迅速打开电脑。</p>
+<p>监控显示，原本稳定在每秒 800 次请求的系统，突然出现了大量超时。</p>
+<p>他第一反应是：</p>
+<p>“是不是服务器 CPU 太高了？要不要重启？”</p>
+<p>陈默立即回复：</p>
+<p>“你连 CPU 为什么高都不知道，就准备重启？”</p>
+<p>“可是系统已经快不能用了。”</p>
+<p>“那你告诉我，重启能解决什么问题？”</p>
+<p>林川沉默了。</p>
+<p>陈默继续说道：</p>
+<p>“记住，线上事故最危险的不是系统宕机，而是工程师在不知道原因的时候，随意操作生产环境。”</p>
+<p>“现在，我教你第一件事。”</p>
+<p>“先判断故障范围，再止血，保留证据，最后定位根因。不要把排查顺序搞反。”</p>
+<h2 id="_3">第二幕：第一条线索——到底是谁出了问题？</h2>
+<p>陈默打开监控平台。</p>
+<p>“林川，假设用户反馈领券失败，你会怀疑哪里？”</p>
+<p>林川思考片刻：</p>
+<p>“可能是前端，也可能是网关、Java 服务、Redis、MySQL，甚至 RabbitMQ。”</p>
+<p>“没错。那你怎么判断？”</p>
+<p>陈默在白板上画出整条请求链路。</p>
+<figure class="architecture"><div class="diagram-frame" tabindex="0" role="region" aria-label="领券请求链路：从网关到应用及下游依赖，可横向滚动"><img alt="领券请求链路：从网关到应用及下游依赖" src="diagrams/request-chain.svg" /></div><figcaption><span>领券请求链路：从网关到应用及下游依赖</span><span class="figure-links"><a href="diagrams/request-chain.svg" target="_blank" rel="noopener">查看大图 ↗</a></span></figcaption></figure>
+<p>“现在假设 Nginx 记录大量 504，你能确定 Java 服务 CPU 有问题吗？”</p>
+<p>“不能。504 只能说明网关在规定时间内没有等到上游的有效响应。”</p>
+<p>“对。它可能是 Java 服务处理太慢，也可能是网络异常、连接建立失败、依赖阻塞等。”</p>
+<p>陈默补充：</p>
+<p>“还有一点，HTTP 500 和 504 不一定来自同一个故障点。 你必须结合网关日志、应用日志和链路追踪分析。”</p>
+<h3 id="_4">第一轮排查：判断影响范围</h3>
+<p>陈默要求林川先回答四个问题：</p>
+<ol>
+<li>是所有用户失败，还是部分用户失败？</li>
+<li>是所有接口失败，还是只有领券接口失败？</li>
+<li>是所有实例异常，还是某一个实例异常？</li>
+<li>是突然发生，还是随着流量增加逐渐恶化？</li>
+</ol>
+<p>林川查看监控，发现：</p>
+<ul>
+<li>登录、查询商品等接口基本正常。</li>
+<li>领券接口错误率大幅上升。</li>
+<li>三个业务实例中有两个 CPU 接近 100%。</li>
+<li>故障发生前五分钟，领券服务刚刚发布过新版本。</li>
+</ul>
+<p>林川眼睛一亮。</p>
+<p>“难道是新版本有 Bug？”</p>
+<p>陈默摇头。</p>
+<p>“新版本是重要线索，但时间相关不等于因果关系。先看发布前后差异。”</p>
+<p>他们核对了发布记录，发现新版本引入了一个营销资格计算逻辑。</p>
+<p>但此时系统还在不断报错。</p>
+<p>“先止血。”陈默说。</p>
+<p>他们确认旧版本兼容当前数据库结构、没有不可逆数据迁移后，通过发布平台将流量切回上一稳定版本，并逐步摘除异常实例。</p>
+<p>几分钟后，错误率开始下降。</p>
+<figure class="architecture"><div class="diagram-frame" tabindex="0" role="region" aria-label="回滚后错误率下降（模拟数据，非真实监控），可横向滚动"><img alt="回滚后错误率下降（模拟数据，非真实监控）" src="diagrams/rollback-errors.svg" /></div><figcaption><span>回滚后错误率下降（模拟数据，非真实监控）</span><span class="figure-links"><a href="data/rollback-errors.csv" download>模拟数据 CSV ↓</a><a href="diagrams/rollback-errors.svg" target="_blank" rel="noopener">查看大图 ↗</a></span></figcaption></figure>
+<p>“系统恢复了。”林川长出一口气。</p>
+<p>“但事故还没结束。”陈默说，“我们还不知道为什么。”</p>
+<h2 id="cpu-100">第三幕：CPU 100%，就一定是死循环吗？</h2>
+<p>陈默拿出刚才保留的 JVM 线程快照。</p>
+<p>“假设我们在故障发生时登录到 Linux 服务器，你第一步会执行什么？”</p>
+<p>林川回答：</p>
+<pre><code>top
+</code></pre>
+<p>屏幕显示：</p>
+<pre><code>PID     USER    %CPU   %MEM   COMMAND
+18432   app     195.3  18.2   java
+</code></pre>
+<p>林川愣住了。</p>
+<p>“CPU 不是最高 100% 吗？怎么会有 195%？”</p>
+<p>陈默笑了笑。</p>
+<p>“在 Linux 常见的 <code>top</code> 显示模式下，进程 CPU 使用率可以超过 100%，因为一个进程可能同时使用多个 CPU 核心。”</p>
+<p>“195% 大致相当于使用了接近两个逻辑 CPU 核心的计算能力。”</p>
+<p>“但注意，这还不能说明一定是 Java 业务代码的问题。”</p>
+<p>“可能是频繁 GC、死循环、热点计算、序列化开销，也可能是其他原因。”</p>
+<p>“所以，我们需要继续往下查。”</p>
+<h4 id="java">第一步：找到 Java 进程</h4>
+<pre><code>jps -l
+</code></pre>
+<p>假设输出：</p>
+<pre><code>18432 com.xinghai.BenefitApplication
+</code></pre>
+<h4 id="cpu">第二步：查看进程内的高 CPU 线程</h4>
+<pre><code>top -H -p 18432
+</code></pre>
+<p>林川看到：</p>
+<pre><code>PID     %CPU   COMMAND
+18479   98.7   java
+18483   91.2   java
+18491    2.1   java
+</code></pre>
+<p>“18479 和 18483 这两个线程很可疑！”</p>
+<p>“对。但现在我们只知道线程 ID，不知道它们执行了什么 Java 代码。”</p>
+<p>“怎么办？”</p>
+<p>“把线程 ID 转换成十六进制。”</p>
+<pre><code>printf '%x\n' 18479
+</code></pre>
+<p>输出：</p>
+<pre><code>482f
+</code></pre>
+<p>“为什么要转十六进制？”</p>
+<p>“因为 HotSpot JVM 的线程 dump 通常使用十六进制 <code>nid</code> 表示操作系统原生线程 ID。”</p>
+<h4 id="_5">第三步：抓取线程栈</h4>
+<pre><code>jcmd 18432 Thread.print -l &gt; /tmp/thread.txt
+</code></pre>
+<p>然后搜索：</p>
+<pre><code>grep -A 35 'nid=0x482f' /tmp/thread.txt
+</code></pre>
+<p>屏幕上出现：</p>
+<pre><code>&quot;coupon-worker-7&quot; #85
+   java.lang.Thread.State: RUNNABLE
+    at com.xinghai.rule.RuleEngine.calculate(...)
+    at com.xinghai.coupon.CouponService.check(...)
+    at com.xinghai.coupon.CouponController.receive(...)
+</code></pre>
+<p>林川兴奋地说道：</p>
+<p>“找到凶手了！RuleEngine！”</p>
+<p>陈默却摇头。</p>
+<p>“还不能确定。”</p>
+<p>“为什么？”</p>
+<p>“因为 <code>RUNNABLE</code> 只是 JVM 线程状态，单次线程栈也只能说明采样瞬间它正在执行这段代码。”</p>
+<p>“我们要连续采样，看它是不是一直停留在同一段计算逻辑里。”</p>
+<p>于是，他们间隔几秒抓取了多份线程快照。</p>
+<p>结果发现，两条高 CPU 线程反复出现在同一个规则计算方法中。</p>
+<p>而 GC 指标没有显示异常增长。</p>
+<p>“现在我们才有比较充分的理由怀疑业务代码热点。”</p>
+<h2 id="_6">第四幕：隐藏在循环里的杀手</h2>
+<p>林川打开刚刚上线的规则计算代码。</p>
+<pre><code>public int calculate(List&lt;Integer&gt; scores) {
+    int result = 0;
+
+    for (int i = 0; i &lt; scores.size(); i++) {
+        for (int j = 0; j &lt; scores.size(); j++) {
+            result += Math.abs(scores.get(i) - scores.get(j));
+        }
+    }
+
+    return result;
+}
+</code></pre>
+<p>“这段代码有什么问题？”陈默问。</p>
+<p>“嵌套循环，时间复杂度 O(n²)。”</p>
+<p>“那它一定有问题吗？”</p>
+<p>“不一定。如果 scores 只有十个元素，执行一百次计算，问题不大。”</p>
+<p>“很好。那如果有一万个元素呢？”</p>
+<p>林川迅速计算。</p>
+<p><strong>10,000 × 10,000 = 100,000,000</strong></p>
+<p>“一亿次！”</p>
+<p>“而且如果有大量用户并发请求，多个线程就会同时执行这些计算。”</p>
+<p>“这才是 CPU 被打满的原因。”</p>
+<p>陈默继续解释：</p>
+<p>“以前的版本只对少量固定规则评分。新版本把用户历史行为全部传了进来，部分用户的集合达到了上万个元素。”</p>
+<p>“算法复杂度从可以忽略，变成了整个服务的性能瓶颈。”</p>
+<blockquote>
+<p><strong>工程补充</strong>：示例保留了事故代码。除了二次复杂度，还要检查整数溢出：两个 int 相减和累加都可能溢出，Math.abs(Integer.MIN_VALUE) 也不会得到正数。修复时应在相减前提升数值类型，并按输入范围验证总和是否超出 long；若列表不是随机访问实现，重复 get 还会增加开销。</p>
+</blockquote>
+<p>林川问：</p>
+<p>“那是不是把服务器扩容就行？”</p>
+<p>“扩容可以缓解，但未必解决。”</p>
+<p>“假设单次请求耗费大量 CPU，扩容可能暂时增加吞吐量，但如果流量继续增长，问题仍会出现。更重要的是，这段算法本身是否能优化？”</p>
+<p>他们重新分析需求，发现根本不需要计算所有元素对之间的绝对差。</p>
+<p>对于排序后的数组 <code>a₀ ≤ a₁ ≤ … ≤ aₙ₋₁</code>，可以利用每个元素对总和的贡献，将原来的二次复杂度优化为排序主导的 <code>O(n log n)</code>。</p>
+<p>但陈默没有立刻把优化代码提交生产。</p>
+<p>“先补边界测试、压测和性能基准，再走灰度发布。”</p>
+<p>“因为我们解决的是线上事故，不是一道只要求通过样例的算法题。”</p>
+<h2 id="_7">第五幕：真正的线上排查方法论</h2>
+<p>凌晨 4:12。</p>
+<p>故障复盘会议开始。</p>
+<p>陈默在白板上写下八个字：</p>
+<p>现象 → 范围 → 止血 → 根因</p>
+<p>接着，他补充了完整流程。</p>
+<ol>
+<li>发现异常</li>
+</ol>
+<p>通过错误率、P95/P99 延迟、吞吐量、资源使用率发现故障
+2. 确定故障范围</p>
+<p>按用户、接口、实例、机房、版本、时间维度缩小范围
+3. 安全止血</p>
+<p>回滚、限流、降级、熔断、切流或扩容；优先选择可逆操作
+4. 保留现场证据</p>
+<p>保存日志、线程栈、GC 指标、Trace、数据库与中间件状态
+5. 提出并验证假设</p>
+<p>根据证据排除错误方向，不凭单一指标下结论
+6. 修复并验证</p>
+<p>测试环境复现、压测、灰度、监控验证，必要时回滚
+7. 事故复盘</p>
+<p>补充测试、告警、容量规划和应急预案，避免再次发生</p>
+<p>陈默最后问：</p>
+<p>“林川，你现在还觉得线上 CPU 100%，直接重启就可以了吗？”</p>
+<p>“不觉得了。”</p>
+<p>“说说为什么。”</p>
+<p>“因为 CPU 高只是现象，可能是业务计算、GC、线程竞争等原因。重启可能暂时恢复，但也可能销毁关键现场，而且问题可能很快再次出现。”</p>
+<p>“如果业务影响严重，应优先通过可控方式止血，同时尽量保存证据。之后再结合 CPU、线程栈、GC、发布记录和调用链定位根因。”</p>
+<p>陈默点点头。</p>
+<p>“这才是生产环境工程师的思维方式。”</p>
+<h2 id="cpu_1">本章技术档案：CPU 异常排查速查</h2>
+<table>
+<thead>
+<tr>
+<th>现象</th>
+<th>重点怀疑</th>
+<th>排查手段</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>CPU 高，少数线程持续繁忙</td>
+<td>死循环、热点计算</td>
+<td><code>top -H</code>、线程栈、Profiler</td>
+</tr>
+<tr>
+<td>CPU 高，GC 次数频繁</td>
+<td>对象分配过快、堆压力</td>
+<td><code>jstat</code>、GC 日志、JFR</td>
+</tr>
+<tr>
+<td>CPU 不高，请求却很慢</td>
+<td>I/O 阻塞、锁等待、连接池耗尽</td>
+<td>线程栈、Trace、连接池指标</td>
+</tr>
+<tr>
+<td>CPU 高，吞吐量下降</td>
+<td>GC、锁竞争、计算瓶颈</td>
+<td>CPU/GC/线程联合分析</td>
+</tr>
+<tr>
+<td>只有个别实例异常</td>
+<td>流量倾斜、实例配置、局部故障</td>
+<td>实例对比、负载均衡指标</td>
+</tr>
+</tbody>
+</table>
+<p>注意：生产排查命令应在具备权限、遵循操作规范的情况下执行。线程 dump、Profiler、Heap Dump 都可能产生开销，尤其需要注意磁盘空间、敏感数据和高负载实例。</p>
+<h3 id="_8">面试官突然出现</h3>
+<p>第二天上午，陈默扮演面试官。</p>
+<p>“假设线上 Java 服务 CPU 突然达到 100%，你会怎么排查？”</p>
+<p>林川回答：</p>
+<p>“我会先判断影响范围和业务严重程度，结合监控确定是否需要限流、切流或回滚止血。</p>
+<p>然后通过 <code>top</code> 判断是哪个进程占用 CPU，通过 <code>top -H -p PID</code> 找到高 CPU 线程，将线程 ID 转为十六进制，结合 <code>jcmd Thread.print</code> 或线程 dump 定位对应 Java 调用栈。</p>
+<p>如果线程持续执行某段业务逻辑，我会重点排查死循环、算法复杂度和热点计算；如果 GC 指标异常，则进一步查看 GC 日志、堆使用情况和对象分配速率。</p>
+<p>定位原因后，在测试环境复现并验证修复方案，灰度发布，观察 CPU、吞吐量、延迟和错误率是否恢复，最后完成事故复盘。”</p>
+<p>陈默说：</p>
+<p>“这个回答已经具备了完整的排查逻辑。但真正的难点在于，你能不能根据现场证据判断下一步应该查什么，而不是机械地背命令。”</p>
+<h2 id="_9">后续章节规划 · 尚未发布</h2>
+<p>这部小说会逐渐从单机故障深入到完整的分布式系统事故。</p>
+<table>
+<thead>
+<tr>
+<th>章节</th>
+<th>事故主题</th>
+<th>核心技术</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>第二章</td>
+<td>消失的内存：服务器为什么越跑越慢？</td>
+<td>JVM 内存泄漏、OOM、Heap Dump、MAT</td>
+</tr>
+<tr>
+<td>第三章</td>
+<td>被困住的线程：接口突然全部超时</td>
+<td>线程池、锁竞争、死锁、连接池</td>
+</tr>
+<tr>
+<td>第四章</td>
+<td>数据库的死亡倒计时</td>
+<td>MySQL 慢 SQL、索引失效、执行计划</td>
+</tr>
+<tr>
+<td>第五章</td>
+<td>一场无法提交的事务</td>
+<td>行锁、间隙锁、死锁、MVCC</td>
+</tr>
+<tr>
+<td>第六章</td>
+<td>Redis 帝国的雪崩</td>
+<td>缓存穿透、击穿、雪崩、热 Key</td>
+</tr>
+<tr>
+<td>第七章</td>
+<td>消失的十万张优惠券</td>
+<td>RabbitMQ 消息丢失、重复消费、积压</td>
+</tr>
+<tr>
+<td>第八章</td>
+<td>504 风暴：谁偷走了响应时间？</td>
+<td>TCP、连接池、Nginx、超时链路</td>
+</tr>
+<tr>
+<td>第九章</td>
+<td>JVM 的停顿：消失的三秒钟</td>
+<td>GC、STW、G1、ZGC</td>
+</tr>
+<tr>
+<td>第十章</td>
+<td>流量洪峰：十万请求同时抵达</td>
+<td>限流、熔断、降级、容量规划</td>
+</tr>
+<tr>
+<td>第十一章</td>
+<td>幽灵订单：数据为何不一致？</td>
+<td>分布式事务、幂等、补偿、最终一致性</td>
+</tr>
+<tr>
+<td>第十二章</td>
+<td>看不见的凶手：生产事故终极调查</td>
+<td>Prometheus、Grafana、Tracing、Arthas、JFR</td>
+</tr>
+</tbody>
+</table>
+<h3 id="16gb-oom">下一章：消失的内存——16GB 的服务器为什么还是 OOM 了？</h3>
+<p>故事将从一次诡异的生产事故开始：服务器拥有 16GB 内存，JVM 最大堆设置为 8GB，监控显示堆内存似乎还有空间，Java 进程却突然被 Linux 杀死。</p>
+<p>我们将随着林川的调查，逐步揭开 Java Heap OOM、Metaspace OOM、Direct Memory OOM、容器 OOMKilled、Linux OOM Killer、内存泄漏与内存溢出的区别，以及如何使用 <code>jcmd</code>、<code>jmap</code>、MAT、GC 日志和 Arthas 找出真正的问题。</p></article><nav class="chapter-nav" aria-label="章节切换"><a href="index.html">← 全书目录</a><a href="chapter-02.html" rel="next">下一章 →</a></nav></main></div><footer>生产环境：永不熄灭的服务器<br><small>现有 4 章 · 连载中 · 第五章待续</small><p><a href="editorial.html">整理说明与技术参考</a> · <a href="https://github.com/wupzl/online-troubleshooting-reader">项目源码 ↗</a></p></footer></body></html>

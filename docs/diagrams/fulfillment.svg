@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 755" role="img" aria-labelledby="title desc">
+<title id="title">权益履约需要明确跨系统边界</title><desc id="desc">Redis 预占与 MySQL 事务之间仍有失败窗口，需要超时释放与恢复机制。远程规则查询：设置超时、限流与失败策略；Redis Lua 预占：单个脚本内原子；记录预占标识并支持恢复；MySQL 本地事务：业务状态与 Outbox 事件一同提交；Outbox Relay → RabbitMQ：发布确认、重试与重复投递处理；履约消费者 → MySQL：唯一约束、幂等状态机、补偿与对账</desc>
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#a44b32"/></marker></defs>
+<style>text{font-family:"Microsoft YaHei","Noto Sans CJK SC",sans-serif;fill:#302b28}.detail{font-size:15px;fill:#69605b}.title{font-size:25px;font-weight:700}.label{font-size:19px;font-weight:650}</style>
+<rect width="900" height="755" rx="12" fill="#fffaf4"/>
+<text x="32" y="44" class="title">权益履约需要明确跨系统边界</text>
+<text x="32" y="76" class="detail">Redis 预占与 MySQL 事务之间仍有失败窗口，需要超时释放与恢复机制</text>
+<rect x="32.0" y="108" width="836.0" height="96" rx="7" fill="#fff" stroke="#e1cec0"/>
+<text x="450.0" y="138" text-anchor="middle" class="label">远程规则查询</text>
+<text x="450.0" y="164" text-anchor="middle" class="detail">设置超时、限流与失败策略</text>
+<path d="M450.0 206 L450.0 230" stroke="#a44b32" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+<rect x="32.0" y="234" width="836.0" height="96" rx="7" fill="#fff" stroke="#e1cec0"/>
+<text x="450.0" y="264" text-anchor="middle" class="label">Redis Lua 预占</text>
+<text x="450.0" y="290" text-anchor="middle" class="detail">单个脚本内原子；记录预占标识并支持恢复</text>
+<path d="M450.0 332 L450.0 356" stroke="#a44b32" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+<rect x="32.0" y="360" width="836.0" height="96" rx="7" fill="#fff" stroke="#e1cec0"/>
+<text x="450.0" y="390" text-anchor="middle" class="label">MySQL 本地事务</text>
+<text x="450.0" y="416" text-anchor="middle" class="detail">业务状态与 Outbox 事件一同提交</text>
+<path d="M450.0 458 L450.0 482" stroke="#a44b32" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+<rect x="32.0" y="486" width="836.0" height="96" rx="7" fill="#fff" stroke="#e1cec0"/>
+<text x="450.0" y="516" text-anchor="middle" class="label">Outbox Relay → RabbitMQ</text>
+<text x="450.0" y="542" text-anchor="middle" class="detail">发布确认、重试与重复投递处理</text>
+<path d="M450.0 584 L450.0 608" stroke="#a44b32" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+<rect x="32.0" y="612" width="836.0" height="96" rx="7" fill="#fff" stroke="#e1cec0"/>
+<text x="450.0" y="642" text-anchor="middle" class="label">履约消费者 → MySQL</text>
+<text x="450.0" y="668" text-anchor="middle" class="detail">唯一约束、幂等状态机、补偿与对账</text>
+</svg>

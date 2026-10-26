@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 503" role="img" aria-labelledby="title desc">
+<title id="title">唯一工作线程无法执行排队的子任务</title><desc id="desc">工程示意 · 按证据分析，结合实际配置验证。任务 A 占用唯一工作线程：向同一线程池提交任务 B；任务 A 调用 inner.get()：等待 B 完成，但不归还工作线程；任务 B 只能留在队列：B 等待工作线程；A 等待 B，无法自行推进</desc>
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#a44b32"/></marker></defs>
+<style>text{font-family:"Microsoft YaHei","Noto Sans CJK SC",sans-serif;fill:#302b28}.detail{font-size:15px;fill:#69605b}.title{font-size:25px;font-weight:700}.label{font-size:19px;font-weight:650}</style>
+<rect width="900" height="503" rx="12" fill="#fffaf4"/>
+<text x="32" y="44" class="title">唯一工作线程无法执行排队的子任务</text>
+<text x="32" y="76" class="detail">工程示意 · 按证据分析，结合实际配置验证</text>
+<rect x="32.0" y="108" width="836.0" height="96" rx="7" fill="#fff" stroke="#e1cec0"/>
+<text x="450.0" y="138" text-anchor="middle" class="label">任务 A 占用唯一工作线程</text>
+<text x="450.0" y="164" text-anchor="middle" class="detail">向同一线程池提交任务 B</text>
+<path d="M450.0 206 L450.0 230" stroke="#a44b32" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+<rect x="32.0" y="234" width="836.0" height="96" rx="7" fill="#fff" stroke="#e1cec0"/>
+<text x="450.0" y="264" text-anchor="middle" class="label">任务 A 调用 inner.get()</text>
+<text x="450.0" y="290" text-anchor="middle" class="detail">等待 B 完成，但不归还工作线程</text>
+<path d="M450.0 332 L450.0 356" stroke="#a44b32" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+<rect x="32.0" y="360" width="836.0" height="96" rx="7" fill="#fff" stroke="#e1cec0"/>
+<text x="450.0" y="390" text-anchor="middle" class="label">任务 B 只能留在队列</text>
+<text x="450.0" y="416" text-anchor="middle" class="detail">B 等待工作线程；A 等待 B，无法自行推进</text>
+</svg>

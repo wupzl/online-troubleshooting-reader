@@ -1,0 +1,38 @@
+# 整理说明与技术参考
+
+## 内容与连载边界
+
+《生产环境：永不熄灭的服务器》现有四章完整正文。第五章“无法提交的事务——MySQL 锁战争”只有预告，第五至十二章的规划不表示正文已经发布。
+
+故事人物、公司、告警、日志、线程栈和 SQL 执行计划均作为教学场景理解，不对应可核验的真实生产事故。命令示例面向 Linux / HotSpot 平台线程及传统同步服务模型；版本、权限、PID 命名空间和部署方式会影响实际行为。
+
+## 原稿与整理方法
+
+原稿完整存档于仓库 `source/original.md`，保持输入文件的字节内容。日常维护 `chapters/01.md` 等章节和 `book.json`，构建只生成网站，不重新导入原稿。
+
+保留四章的故事、代码示例、技术档案、面试问答和后续预告。移除开头提问、独立“下一章”等对话痕迹、重复书名、不相关的外链配图和图片搜索结果数量。统一幕标题层级，将误作标题的监控数字整理成事故快照表，公式转成可直接阅读的文字表达，不依赖外部公式 CDN。
+
+## 技术修正与补充
+
+1. **NMT 数字一致性**：原稿 Total committed 为 7600MB，小于 Java Heap committed 的 8192MB。教学示例调整为 Total committed 9100MB，并合并展示其他类别，使 reserved 与 committed 的类别总和各自一致。不是声称拿到了新的真实日志。NMT 只能追踪其覆盖范围内的分配，不能据其没有增长排除第三方原生资源问题。参见 [Oracle NMT 文档](https://docs.oracle.com/en/java/javase/21/vm/native-memory-tracking.html)。
+2. **终止进程与在线证据**：已经退出的进程无法再被 jcmd 检查；第二章后续命令明确来自存活实例、事先采集和受控复现实验。137 本身不能证明 OOM，应核对容器退出原因与事件。参见 [Kubernetes 内存资源示例](https://kubernetes.io/docs/tasks/configure-pod-container/assign-memory-resource/)。
+3. **缓存对象类型**：与 ConcurrentHashMap 示例对应的直方图节点类型由 HashMap$Node 改为 ConcurrentHashMap$Node。直方图仍为简化教学数据，不能仅凭实例数推断泄漏。
+4. **数值边界**：第一章保留原始事故代码，补充 int 相减、Math.abs 与累加溢出，以及 List 实现对访问复杂度的影响，避免把性能优化等同于正确性验证。
+5. **Outbox 事务边界**：业务状态与 Outbox 事件需要在同一个数据库本地事务中提交。Redis Lua 预占与 MySQL 事务之间仍然存在失败窗口，需要恢复记录、幂等标识、超时释放、补偿和对账。参见 [Transactional Outbox 原始模式说明](https://microservices.io/patterns/data/transactional-outbox.html)。
+6. **分页一致性**：唯一排序键让分页位置确定，但并不提供跨多次查询的同一快照；补充并发更新时重复和漏读的边界。联合索引能否消除排序、游标条件能否有效利用索引，应按执行计划验证。参见 [MySQL ORDER BY 优化](https://dev.mysql.com/doc/refman/8.4/en/order-by-optimization.html) 与 [LIMIT 优化](https://dev.mysql.com/doc/refman/8.4/en/limit-optimization.html)。
+
+## 核查过的排查边界
+
+- **线程状态**：保留 RUNNABLE 不等于正在消耗 CPU、WAITING 不必然异常等限定。JVM 状态并非操作系统状态的简单映射。参见 [Java Thread.State](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/Thread.State.html)。
+- **堆转储**：GC.heap_dump 属于高影响操作，默认会请求 Full GC，除非指定相应选项；具体参数以目标 JDK 为准。参见 [JDK 21 jcmd 命令文档](https://docs.oracle.com/en/java/javase/21/docs/specs/man/jcmd.html)。
+- **执行计划**：EXPLAIN 的估算行数与实际执行统计不同；EXPLAIN ANALYZE 会执行目标语句，应在适当环境评估开销。参见 [MySQL EXPLAIN 文档](https://dev.mysql.com/doc/refman/8.4/en/explain.html)。
+
+本次针对影响理解的明显问题进行了核查和修正，并非对所有版本、配置和故障场景逐项复现实验。原稿中已有的限制条件予以保留。
+
+## 本地图表与数据
+
+正文包含 14 张本地 SVG 关系图与 6 张趋势图。关系图表达逻辑结构，不表示真实内存比例、B+ 树页面或固定执行顺序；请求链路中并列依赖分别连接到业务服务。
+
+六组曲线由整理时创建的模拟数据绘制，分别展示错误率恢复、内存增长、修复前后 RSS、查询延迟、分页成本与数据库 CPU 恢复。它们用于重建原稿已经丢失的趋势图，**不是原始监控数据、实测结果或性能承诺**。每张曲线均标注模拟数据，并提供 CSV 下载；页码对比采用等间距类别轴。
+
+图表源文件在 `assets/diagrams/`，CSV 在 `assets/data/`，生成脚本是 `scripts/create_diagrams.py`。日常构建复制已维护图表，无需联网、Matplotlib 或系统字体；重新绘图时需要 Matplotlib 与可用的中文字体。

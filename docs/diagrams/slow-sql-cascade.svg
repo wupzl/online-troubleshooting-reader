@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 503" role="img" aria-labelledby="title desc">
+<title id="title">连接池耗尽可能是连锁反应</title><desc id="desc">工程示意 · 按证据分析，结合实际配置验证。SQL 执行时间增长：扫描、排序、锁等待或其他资源瓶颈；数据库连接占用时间变长：HikariCP 活跃连接达到上限；Tomcat 请求线程等待连接：尾延迟和错误率上升，共享资源的其他接口受影响</desc>
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#a44b32"/></marker></defs>
+<style>text{font-family:"Microsoft YaHei","Noto Sans CJK SC",sans-serif;fill:#302b28}.detail{font-size:15px;fill:#69605b}.title{font-size:25px;font-weight:700}.label{font-size:19px;font-weight:650}</style>
+<rect width="900" height="503" rx="12" fill="#fffaf4"/>
+<text x="32" y="44" class="title">连接池耗尽可能是连锁反应</text>
+<text x="32" y="76" class="detail">工程示意 · 按证据分析，结合实际配置验证</text>
+<rect x="32.0" y="108" width="836.0" height="96" rx="7" fill="#fff" stroke="#e1cec0"/>
+<text x="450.0" y="138" text-anchor="middle" class="label">SQL 执行时间增长</text>
+<text x="450.0" y="164" text-anchor="middle" class="detail">扫描、排序、锁等待或其他资源瓶颈</text>
+<path d="M450.0 206 L450.0 230" stroke="#a44b32" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+<rect x="32.0" y="234" width="836.0" height="96" rx="7" fill="#fff" stroke="#e1cec0"/>
+<text x="450.0" y="264" text-anchor="middle" class="label">数据库连接占用时间变长</text>
+<text x="450.0" y="290" text-anchor="middle" class="detail">HikariCP 活跃连接达到上限</text>
+<path d="M450.0 332 L450.0 356" stroke="#a44b32" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+<rect x="32.0" y="360" width="836.0" height="96" rx="7" fill="#fff" stroke="#e1cec0"/>
+<text x="450.0" y="390" text-anchor="middle" class="label">Tomcat 请求线程等待连接</text>
+<text x="450.0" y="416" text-anchor="middle" class="detail">尾延迟和错误率上升，共享资源的其他接口受影响</text>
+</svg>

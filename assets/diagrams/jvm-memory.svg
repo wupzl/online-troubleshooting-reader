@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 377" role="img" aria-labelledby="title desc">
+<title id="title">Java 堆只是进程内存的一部分</title><desc id="desc">非真实比例 · reserved / committed / used / RSS / cgroup 的口径不同。Java Heap：对象实例与数组；-Xmx 限制上限 / Metaspace：类元数据 / Thread Stacks：平台线程栈与线程数量；Direct Memory：直接缓冲区与缓冲池 / Code Cache：JIT 编译代码 / 其他原生资源：GC、JNI、映射与第三方库</desc>
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#a44b32"/></marker></defs>
+<style>text{font-family:"Microsoft YaHei","Noto Sans CJK SC",sans-serif;fill:#302b28}.detail{font-size:15px;fill:#69605b}.title{font-size:25px;font-weight:700}.label{font-size:19px;font-weight:650}</style>
+<rect width="900" height="377" rx="12" fill="#fffaf4"/>
+<text x="32" y="44" class="title">Java 堆只是进程内存的一部分</text>
+<text x="32" y="76" class="detail">非真实比例 · reserved / committed / used / RSS / cgroup 的口径不同</text>
+<rect x="32.0" y="108" width="266.6666666666667" height="96" rx="7" fill="#fff" stroke="#e1cec0"/>
+<text x="165.33333333333334" y="138" text-anchor="middle" class="label">Java Heap</text>
+<text x="165.33333333333334" y="164" text-anchor="middle" class="detail">对象实例与数组；-Xmx</text>
+<text x="165.33333333333334" y="186" text-anchor="middle" class="detail">限制上限</text>
+<rect x="316.6666666666667" y="108" width="266.6666666666667" height="96" rx="7" fill="#fff" stroke="#e1cec0"/>
+<text x="450.0" y="138" text-anchor="middle" class="label">Metaspace</text>
+<text x="450.0" y="164" text-anchor="middle" class="detail">类元数据</text>
+<rect x="601.3333333333334" y="108" width="266.6666666666667" height="96" rx="7" fill="#fff" stroke="#e1cec0"/>
+<text x="734.6666666666667" y="138" text-anchor="middle" class="label">Thread Stacks</text>
+<text x="734.6666666666667" y="164" text-anchor="middle" class="detail">平台线程栈与线程数量</text>
+<rect x="32.0" y="234" width="266.6666666666667" height="96" rx="7" fill="#fff" stroke="#e1cec0"/>
+<text x="165.33333333333334" y="264" text-anchor="middle" class="label">Direct Memory</text>
+<text x="165.33333333333334" y="290" text-anchor="middle" class="detail">直接缓冲区与缓冲池</text>
+<rect x="316.6666666666667" y="234" width="266.6666666666667" height="96" rx="7" fill="#fff" stroke="#e1cec0"/>
+<text x="450.0" y="264" text-anchor="middle" class="label">Code Cache</text>
+<text x="450.0" y="290" text-anchor="middle" class="detail">JIT 编译代码</text>
+<rect x="601.3333333333334" y="234" width="266.6666666666667" height="96" rx="7" fill="#fff" stroke="#e1cec0"/>
+<text x="734.6666666666667" y="264" text-anchor="middle" class="label">其他原生资源</text>
+<text x="734.6666666666667" y="290" text-anchor="middle" class="detail">GC、JNI、映射与第三方库</text>
+</svg>

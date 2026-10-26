@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 503" role="img" aria-labelledby="title desc">
+<title id="title">数据库连接占用时间影响并发需求</title><desc id="desc">工程示意 · 按证据分析，结合实际配置验证。HTTP 请求进入 Spring Boot：从 HikariCP 获取连接；执行 SQL / 提交事务：连接在这一段时间内被占用；归还连接并返回响应：稳定系统中：平均占用量 L = 吞吐率 λ × 占用时间 W</desc>
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#a44b32"/></marker></defs>
+<style>text{font-family:"Microsoft YaHei","Noto Sans CJK SC",sans-serif;fill:#302b28}.detail{font-size:15px;fill:#69605b}.title{font-size:25px;font-weight:700}.label{font-size:19px;font-weight:650}</style>
+<rect width="900" height="503" rx="12" fill="#fffaf4"/>
+<text x="32" y="44" class="title">数据库连接占用时间影响并发需求</text>
+<text x="32" y="76" class="detail">工程示意 · 按证据分析，结合实际配置验证</text>
+<rect x="32.0" y="108" width="836.0" height="96" rx="7" fill="#fff" stroke="#e1cec0"/>
+<text x="450.0" y="138" text-anchor="middle" class="label">HTTP 请求进入 Spring Boot</text>
+<text x="450.0" y="164" text-anchor="middle" class="detail">从 HikariCP 获取连接</text>
+<path d="M450.0 206 L450.0 230" stroke="#a44b32" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+<rect x="32.0" y="234" width="836.0" height="96" rx="7" fill="#fff" stroke="#e1cec0"/>
+<text x="450.0" y="264" text-anchor="middle" class="label">执行 SQL / 提交事务</text>
+<text x="450.0" y="290" text-anchor="middle" class="detail">连接在这一段时间内被占用</text>
+<path d="M450.0 332 L450.0 356" stroke="#a44b32" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+<rect x="32.0" y="360" width="836.0" height="96" rx="7" fill="#fff" stroke="#e1cec0"/>
+<text x="450.0" y="390" text-anchor="middle" class="label">归还连接并返回响应</text>
+<text x="450.0" y="416" text-anchor="middle" class="detail">稳定系统中：平均占用量 L = 吞吐率 λ × 占用时间 W</text>
+</svg>

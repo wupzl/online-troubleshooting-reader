@@ -1,0 +1,599 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="color-scheme" content="light dark"><meta name="description" content="生产环境：永不熄灭的服务器。跟随林川与陈默，在故事中学习 Java 线上事故排查。现有 4 章，连载中，第五章待续。"><title>消失的内存——16GB 的服务器为什么还是 OOM 了？ · 生产环境</title><script>try{document.documentElement.dataset.theme=localStorage.getItem('reader-theme')||'white';document.documentElement.style.setProperty('--reading-size',Math.max(16,Math.min(26,Number(localStorage.getItem('reader-size'))||18))+'px')}catch(e){}</script><link rel="stylesheet" href="style.css"><link rel="stylesheet" href="shelf-nav.css"><link rel="stylesheet" href="reader.css"><script src="app.js" defer></script></head>
+<body class="reading"><a class="skip" href="#main">跳到正文</a><header><a class="brand" href="index.html">生产环境<span>ALWAYS ON</span></a><nav class="shelf-nav" aria-label="学习项目导航"><a class="shelf-home" href="/">← 学习书架</a><details class="shelf-switch"><summary>切换项目 ▾</summary><div class="shelf-menu"><a href="/pytorch-apprentice/">PyTorch：炼金术士的学徒</a><a href="/ai-era-reader/">AI 纪元</a><a href="/data-empire-reader/">数据帝国</a><a href="/rag-empire-reader/">RAG 帝国</a><a href="/system-design-reader/">系统设计</a><a href="/online-troubleshooting-reader/" aria-current="page">生产环境</a></div></details></nav><div class="controls"><button id="smaller" aria-label="缩小字号" type="button">A−</button><button id="larger" aria-label="增大字号" type="button">A＋</button><button id="theme" aria-label="切换阅读背景" type="button">纯白</button></div></header>
+<div class="reader-layout"><aside><a href="index.html">← 全书目录</a><p class="eyebrow">本章导航</p><div class="toc">
+<ul>
+<li><a href="#linux">第一幕：一台被 Linux 判处死刑的服务器</a></li>
+<li><a href="#jvm">第二幕：内存王国——JVM 到底占用了多少内存？</a></li>
+<li><a href="#137">第三幕：137 号死亡通知书</a></li>
+<li><a href="#_6">第四幕：不断膨胀的幽灵</a></li>
+<li><a href="#pdf">第五幕：真正的凶手——被遗忘的 PDF 页面</a></li>
+<li><a href="#java-heap-oom">第六幕：另一个世界——如果真的是 Java Heap OOM 呢？</a></li>
+<li><a href="#heap-dump">第七幕：Heap Dump——给内存拍一张尸检照片</a></li>
+<li><a href="#oom">第八幕：五种常见 OOM，五种不同的调查方向</a></li>
+<li><a href="#_9">第九幕：生产事故中的实战决策</a></li>
+<li><a href="#_11">第十幕：面试官的最后一道题</a></li>
+<li><a href="#_12">本章总结：真正需要记住的五件事</a></li>
+<li><a href="#_13">下一章预告</a></li>
+<li><a href="#_14">第三章：《被困住的线程——接口突然全部超时》</a></li>
+</ul>
+</div>
+</aside><main id="main"><div class="chapter-heading"><p class="eyebrow">CHAPTER 02 / 04 · 第一卷 · 线上事故调查局</p><h1>消失的内存——16GB 的服务器为什么还是 OOM 了？</h1><p>JVM 内存 · 原生资源 · OOMKilled</p></div><details class="mobile-toc"><summary>展开本章目录</summary><div class="toc">
+<ul>
+<li><a href="#linux">第一幕：一台被 Linux 判处死刑的服务器</a></li>
+<li><a href="#jvm">第二幕：内存王国——JVM 到底占用了多少内存？</a></li>
+<li><a href="#137">第三幕：137 号死亡通知书</a></li>
+<li><a href="#_6">第四幕：不断膨胀的幽灵</a></li>
+<li><a href="#pdf">第五幕：真正的凶手——被遗忘的 PDF 页面</a></li>
+<li><a href="#java-heap-oom">第六幕：另一个世界——如果真的是 Java Heap OOM 呢？</a></li>
+<li><a href="#heap-dump">第七幕：Heap Dump——给内存拍一张尸检照片</a></li>
+<li><a href="#oom">第八幕：五种常见 OOM，五种不同的调查方向</a></li>
+<li><a href="#_9">第九幕：生产事故中的实战决策</a></li>
+<li><a href="#_11">第十幕：面试官的最后一道题</a></li>
+<li><a href="#_12">本章总结：真正需要记住的五件事</a></li>
+<li><a href="#_13">下一章预告</a></li>
+<li><a href="#_14">第三章：《被困住的线程——接口突然全部超时》</a></li>
+</ul>
+</div>
+</details><article><h2 id="linux">第一幕：一台被 Linux 判处死刑的服务器</h2>
+<p>凌晨 3:42。</p>
+<p>星海科技研发中心。</p>
+<p>林川刚刚结束上一场 CPU 事故的复盘，原本以为终于可以安稳睡觉。</p>
+<p>突然，手机再次响起。</p>
+<h3 id="_1">事故快照 · 虚构场景</h3>
+<table>
+<thead>
+<tr>
+<th>项目</th>
+<th>观测值</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>等级与服务</td>
+<td>P1 · rag-service-prod-02</td>
+</tr>
+<tr>
+<td>时间</td>
+<td>03:42:17</td>
+</tr>
+<tr>
+<td>宿主机内存</td>
+<td>16GB</td>
+</tr>
+<tr>
+<td>JVM 最大堆</td>
+<td>8GiB（-Xmx8g）</td>
+</tr>
+<tr>
+<td>退出码</td>
+<td>137</td>
+</tr>
+<tr>
+<td>异常</td>
+<td>进程突然消失，无 Java OutOfMemoryError 日志</td>
+</tr>
+</tbody>
+</table>
+<p>林川看着监控，皱起眉头。</p>
+<p>“奇怪，服务器有 16GB 内存，我给 JVM 配置了 <code>-Xmx8g</code>，按理说还有 8GB 留给系统。”</p>
+<p>“为什么会内存不足？”</p>
+<p>电话另一端，技术负责人陈默沉默了几秒。</p>
+<p>“林川，你是不是认为 JVM 最大堆内存等于 Java 进程最大内存？”</p>
+<p>“难道不是？”</p>
+<p>“当然不是。”</p>
+<p>“那 <code>-Xmx8g</code> 到底限制了什么？”</p>
+<p>“只限制 Java 堆的最大容量，不是整个 JVM 进程的内存上限。”</p>
+<p>陈默打开远程会议。</p>
+<p>“今晚，我带你认识一个比 CPU 100% 更隐蔽的敌人。”</p>
+<p>“内存。”</p>
+<h2 id="jvm">第二幕：内存王国——JVM 到底占用了多少内存？</h2>
+<p>陈默在白板上画了一座城市。</p>
+<p>“你可以把 JVM 想象成一座城市。”</p>
+<p>“Java 堆只是城市里最大的一片住宅区。”</p>
+<p>“但城市不可能只有住宅区。”</p>
+<p>“还需要道路、仓库、行政中心、工厂，以及工人自己的休息空间。”</p>
+<p>林川点点头。</p>
+<p>“也就是说，Java 进程除了堆，还有其他内存开销？”</p>
+<p>“对。”</p>
+<h3 id="jvm_1">JVM 进程的内存版图</h3>
+<figure class="architecture"><div class="diagram-frame" tabindex="0" role="region" aria-label="JVM 内存版图：堆、元空间、线程栈与原生资源（非真实比例），可横向滚动"><img alt="JVM 内存版图：堆、元空间、线程栈与原生资源（非真实比例）" src="diagrams/jvm-memory.svg" /></div><figcaption><span>JVM 内存版图：堆、元空间、线程栈与原生资源（非真实比例）</span><span class="figure-links"><a href="diagrams/jvm-memory.svg" target="_blank" rel="noopener">查看大图 ↗</a></span></figcaption></figure>
+<p>进程的 RSS、虚拟内存和 JVM 各内存区域不是简单的一一对应关系，不能把配置上限之和当作实际物理内存。</p>
+<p>陈默解释：</p>
+<p>“Java 进程可能消耗的内存，包括堆、元空间、线程栈、直接内存、JIT 代码缓存、GC 数据结构和其他原生内存。”</p>
+<p>“因此，即使堆内存没有达到 8GB，整个进程仍然可能超过操作系统或容器的内存限制。”</p>
+<p>林川突然想到：</p>
+<p>“那我是不是只要把 <code>-Xmx</code> 设置小一点，就能解决？”</p>
+<p>“未必。”</p>
+<p>“为什么？”</p>
+<p>“因为你还不知道内存究竟消耗在哪里。”</p>
+<p>“如果是线程数量异常，降低堆大小不一定有用。”</p>
+<p>“如果是 Direct Memory 不断增长，降低堆大小可能只是给它暂时腾出空间。”</p>
+<p>“如果是容器限制太小，还可能需要重新规划整个内存预算。”</p>
+<p>陈默在白板上写下：</p>
+<p><strong>进程内存使用量 ≠ Java Heap 使用量</strong></p>
+<p>“这是今天你必须记住的第一件事。”</p>
+<h2 id="137">第三幕：137 号死亡通知书</h2>
+<p>林川翻阅应用日志。</p>
+<p>最后一条日志停留在：</p>
+<pre><code>03:42:16 INFO  DocumentParser
+Parsing document: handbook-2026.pdf
+</code></pre>
+<p>随后，没有异常堆栈，没有 <code>OutOfMemoryError</code>，进程直接消失。</p>
+<p>“为什么没有 Java 异常？”</p>
+<p>陈默问：</p>
+<p>“如果 JVM 自己发现 Java 堆空间不足，会发生什么？”</p>
+<p>“通常抛出 <code>java.lang.OutOfMemoryError</code>。”</p>
+<p>“那如果是 Linux 内核直接杀死进程呢？”</p>
+<p>林川愣住了。</p>
+<p>“JVM 根本没有机会抛异常？”</p>
+<p>“没错。”</p>
+<h3 id="_2">两种完全不同的死亡方式</h3>
+<p>陈默画了两条路径。</p>
+<figure class="architecture"><div class="diagram-frame" tabindex="0" role="region" aria-label="两种退出路径：JVM 抛出 OOM 与内核发送 SIGKILL，可横向滚动"><img alt="两种退出路径：JVM 抛出 OOM 与内核发送 SIGKILL" src="diagrams/oom-paths.svg" /></div><figcaption><span>两种退出路径：JVM 抛出 OOM 与内核发送 SIGKILL</span><span class="figure-links"><a href="diagrams/oom-paths.svg" target="_blank" rel="noopener">查看大图 ↗</a></span></figcaption></figure>
+<p>“所以，137 代表什么？”陈默问。</p>
+<p>林川回答：</p>
+<p>“通常是 128 + 9，也就是进程因 SIGKILL 终止。”</p>
+<p>“很好。但要注意，退出码 137 不能单独证明发生了 OOM。 管理员执行 <code>kill -9</code>，或者其他机制发送 SIGKILL，也可能出现 137。”</p>
+<p>“我们必须继续寻找证据。”</p>
+<h4 id="_3">第一步：检查容器退出原因</h4>
+<p>假设服务运行在 Kubernetes 中：</p>
+<pre><code>kubectl describe pod rag-service-xxx
+</code></pre>
+<p>林川看到：</p>
+<pre><code>Last State:
+  Terminated:
+    Reason: OOMKilled
+    Exit Code: 137
+</code></pre>
+<p>“这下可以确定了！”</p>
+<p>“基本可以确认该容器被判定为 OOMKilled。但我们仍然需要弄清楚具体的内存压力来源。”</p>
+<h4 id="_4">第二步：查看容器资源限制</h4>
+<pre><code>kubectl get pod rag-service-xxx -o yaml
+</code></pre>
+<p>关键配置：</p>
+<pre><code>resources:
+  requests:
+    memory: &quot;4Gi&quot;
+  limits:
+    memory: &quot;10Gi&quot;
+</code></pre>
+<p>林川突然发现了问题。</p>
+<p>“服务器虽然有 16GB，但容器的内存限制只有 10Gi！”</p>
+<p>“对。容器能使用的内存，并不直接等于宿主机物理内存。”</p>
+<p>陈默继续说道：</p>
+<p>“<code>requests.memory</code> 主要用于调度与资源保障相关机制；<code>limits.memory</code> 才是这里需要重点关注的内存上限。”</p>
+<p>“所以，我们应该以容器的 10Gi 为基础制定 JVM 内存预算，而不是宿主机的 16GB。”</p>
+<h3 id="_5">一个危险的内存配置</h3>
+<table>
+<thead>
+<tr>
+<th>事故配置</th>
+<th>内存预算</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>容器上限</td>
+<td>10GiB</td>
+</tr>
+<tr>
+<td>堆上限</td>
+<td>8GiB</td>
+</tr>
+<tr>
+<td>其他区域与余量</td>
+<td>2GiB</td>
+</tr>
+</tbody>
+</table>
+<p>堆上限占容器限制的 80%，剩余预算是否足够需要实测。</p>
+<p>“但是，”林川问，“我们现在只是发现配置有风险，仍然不知道究竟是什么吃掉了内存。”</p>
+<p>“正确。”</p>
+<p>陈默打开了另一张监控图。</p>
+<h2 id="_6">第四幕：不断膨胀的幽灵</h2>
+<p>监控数据显示：</p>
+<figure class="architecture"><div class="diagram-frame" tabindex="0" role="region" aria-label="堆使用量平稳而容器内存增长（模拟数据，非真实监控），可横向滚动"><img alt="堆使用量平稳而容器内存增长（模拟数据，非真实监控）" src="diagrams/memory-growth.svg" /></div><figcaption><span>堆使用量平稳而容器内存增长（模拟数据，非真实监控）</span><span class="figure-links"><a href="data/memory-growth.csv" download>模拟数据 CSV ↓</a><a href="diagrams/memory-growth.svg" target="_blank" rel="noopener">查看大图 ↗</a></span></figcaption></figure>
+<p>林川盯着屏幕。</p>
+<p>“Java 堆一直只有 4GB 左右，但是容器内存从 5GB 一直涨到 10GB。”</p>
+<p>“说明什么？”</p>
+<p>“说明内存增长可能主要发生在堆外。”</p>
+<p>“没错。不过这里还有一个细节。”</p>
+<p>“什么？”</p>
+<p>“容器内存指标可能包含文件页缓存等内容，和进程 RSS 不是同一个概念。所以不能仅凭这张图就认定 Direct Memory 泄漏。”</p>
+<p>陈默决定进一步调查。</p>
+<p>“我们需要区分三类证据：JVM 内部统计、进程内存，以及容器 cgroup 统计。”</p>
+<blockquote>
+<p><strong>工程补充</strong>：事故进程已退出，无法再对它执行 jcmd 或读取其 /proc。下文的在线检查来自尚存活的同版本实例和受控复现实验；事后分析同时使用事先采集的指标、容器退出记录与内核事件。命令中的 PID 只是占位示例。</p>
+</blockquote>
+<h3 id="native-memory-tracking">第一件武器：Native Memory Tracking</h3>
+<p>陈默问：</p>
+<p>“你知道 JVM 自带一个叫 NMT 的工具吗？”</p>
+<p>“不知道。”</p>
+<p>“全称 Native Memory Tracking，可以跟踪 HotSpot JVM 自身管理的多类原生内存分配。”</p>
+<p>“不过有两个限制：需要在 JVM 启动时启用，而且它不能完整覆盖所有第三方原生库和所有内存映射。”</p>
+<p>他们检查了事故实例的启动配置。</p>
+<pre><code>-XX:NativeMemoryTracking=summary
+</code></pre>
+<p>“幸好这个服务之前就启用了 NMT。”</p>
+<p>陈默解释：</p>
+<p>“如果没有提前启用，不能指望在进程运行中直接开启完整的 NMT 跟踪。我们需要通过新实例或下次启动启用。”</p>
+<p>查看统计：</p>
+<pre><code>jcmd 18432 VM.native_memory summary scale=MB
+</code></pre>
+<p>以下为合并其他类别后的教学输出，数值用于说明 reserved、committed 与 used 的区别，不是逐字复制的 NMT 日志：</p>
+<pre><code>Native Memory Tracking:
+
+Total: reserved=13500MB, committed=9100MB
+
+- Java Heap
+    reserved=8192MB, committed=8192MB
+
+- Class
+    reserved=1050MB, committed=180MB
+
+- Thread
+    reserved=1300MB, committed=125MB
+
+- Code
+    reserved=250MB, committed=95MB
+
+- Other categories (combined for illustration)
+    reserved=2708MB, committed=508MB
+</code></pre>
+<p>林川发现：</p>
+<p>“为什么 Java Heap committed 是 8192MB，但监控中使用量只有 4GB？”</p>
+<p>陈默解释：</p>
+<p>“因为 committed 和 used 不是同一个概念。”</p>
+<p>“committed 代表 JVM 已向操作系统提交的内存容量，而堆 used 代表当前堆中已使用的容量。”</p>
+<p>“而且 committed 也不能直接等同于实际 RSS。”</p>
+<p>“那 reserved 呢？”</p>
+<p>“reserved 通常表示保留的虚拟地址空间，不代表已经占用了等量物理内存。”</p>
+<p>陈默在白板上写下：</p>
+<table>
+<thead>
+<tr>
+<th>指标</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Reserved</td>
+<td>预留的虚拟地址空间</td>
+</tr>
+<tr>
+<td>Committed</td>
+<td>已提交的内存容量</td>
+</tr>
+<tr>
+<td>Heap Used</td>
+<td>堆中当前已使用的空间</td>
+</tr>
+<tr>
+<td>RSS</td>
+<td>进程实际驻留在物理内存中的页面量</td>
+</tr>
+<tr>
+<td>Cgroup Memory</td>
+<td>容器所属 cgroup 计费的内存使用量</td>
+</tr>
+</tbody>
+</table>
+<p>“这些指标口径不同，不能混为一谈。”</p>
+<p>林川问：</p>
+<p>“可是 NMT 没发现特别明显的增长，怎么办？”</p>
+<p>陈默回答：</p>
+<p>“这反而是一条线索。”</p>
+<p>“如果 JVM 自己跟踪的原生内存变化不大，但进程 RSS 持续增长，就需要怀疑 NMT 覆盖不到的原生分配或内存映射。”</p>
+<p>“接下来查操作系统。”</p>
+<h3 id="_7">第二件武器：进程内存</h3>
+<pre><code>cat /proc/18432/status
+</code></pre>
+<p>重点关注：</p>
+<pre><code>VmRSS:
+VmSize:
+Threads:
+</code></pre>
+<p>也可以查看：</p>
+<pre><code>cat /proc/18432/smaps_rollup
+</code></pre>
+<p>以及：</p>
+<pre><code>pmap -x 18432
+</code></pre>
+<p>陈默补充：</p>
+<p>“如果是容器，还要查看 cgroup v2 的 <code>memory.current</code>、<code>memory.stat</code> 和 <code>memory.events</code> 等指标。”</p>
+<p>“不同容器运行时、cgroup 版本、权限和命名空间下，路径可能不同。”</p>
+<p>林川追问：</p>
+<p>“所以我们需要对比 JVM 内存、进程 RSS 和容器内存三条曲线？”</p>
+<p>“对。这样才能判断内存到底是被 JVM、原生库，还是文件缓存等其他部分消耗。”</p>
+<h2 id="pdf">第五幕：真正的凶手——被遗忘的 PDF 页面</h2>
+<p>凌晨 5:06。</p>
+<p>林川终于找到了异常代码。</p>
+<p>服务负责解析企业上传的 PDF 文档，再将文本切分并写入向量数据库。</p>
+<p>某个开发人员为了提高解析性能，引入了一个原生 PDF 渲染库。</p>
+<p>代码经过简化后类似：</p>
+<pre><code>public void parsePdf(String path) {
+    NativePdfDocument document =
+        NativePdfDocument.open(path);
+
+    for (int i = 0; i &lt; document.pageCount(); i++) {
+        NativePdfPage page = document.loadPage(i);
+
+        String text = page.extractText();
+        saveText(text);
+    }
+}
+</code></pre>
+<p>林川看了半天。</p>
+<p>“这有什么问题？”</p>
+<p>陈默指向 <code>NativePdfPage</code>。</p>
+<p>“它是什么？”</p>
+<p>“一个 Java 对象。”</p>
+<p>“它背后呢？”</p>
+<p>“可能对应原生 PDF 页面资源。”</p>
+<p>“那么当 Java 对象不可达的时候，原生资源就一定立即释放了吗？”</p>
+<p>林川愣住了。</p>
+<p>“不一定。”</p>
+<p>“没错。某些原生库要求调用者显式关闭或释放底层资源。”</p>
+<p>“如果只依赖 Java GC，而没有按照库的资源管理协议释放原生对象，内存就可能不断累积。”</p>
+<p>陈默展示了修复后的伪代码：</p>
+<pre><code>public void parsePdf(String path) {
+    try (NativePdfDocument document =
+             NativePdfDocument.open(path)) {
+
+        for (int i = 0; i &lt; document.pageCount(); i++) {
+            try (NativePdfPage page =
+                     document.loadPage(i)) {
+
+                String text = page.extractText();
+                saveText(text);
+            }
+        }
+    }
+}
+</code></pre>
+<p>这里的 NativePdfDocument、NativePdfPage 是用于讲解的虚构接口，假设它们实现 AutoCloseable。实际使用时必须遵循对应 PDF 库的释放规范。</p>
+<p>“原来如此！”林川说道。</p>
+<p>“Java 堆中的对象可能被 GC 回收，但是底层原生资源未必按照预期释放。”</p>
+<p>“正是这样。”</p>
+<h3 id="gc">为什么 GC 没能拯救服务器？</h3>
+<p>陈默进一步解释：</p>
+<p>“GC 主要依据 Java 对象的可达性和堆内存压力工作。”</p>
+<p>“但某些原生内存分配不会完整地反映在 Java 堆的使用量里。”</p>
+<p>“因此可能出现这样一种情况：”</p>
+<ul>
+<li>Java 堆使用量长期稳定。</li>
+<li>原生内存持续增加。</li>
+<li>JVM 没有明显的堆空间压力。</li>
+<li>容器内存逐渐触及限制。</li>
+<li>最终被 OOM Killer 终止。</li>
+</ul>
+<p>“当然，这不意味着所有堆外内存都不受 GC 影响。”陈默补充，“例如某些直接缓冲区具有与 Java 对象生命周期关联的清理机制，但释放时机和实现细节需要具体分析。”</p>
+<p>“这次的关键是，我们使用的原生库要求显式释放资源，而代码没有做到。”</p>
+<h3 id="_8">如何证明修复有效？</h3>
+<p>林川提出：</p>
+<p>“我们把 <code>close()</code> 加上，然后发布不就行了？”</p>
+<p>陈默摇头。</p>
+<p>“你怎么证明这就是根因？”</p>
+<p>他们做了一个可控的复现实验。</p>
+<p>首先，在测试环境中使用固定的 PDF 文件集，连续解析数千次。</p>
+<p>记录进程 RSS、容器内存、JVM Heap 和 NMT 数据。</p>
+<p>然后分别运行旧版本和修复版本。</p>
+<figure class="architecture"><div class="diagram-frame" tabindex="0" role="region" aria-label="相同文档集下修复前后 RSS 趋势（模拟实验数据），可横向滚动"><img alt="相同文档集下修复前后 RSS 趋势（模拟实验数据）" src="diagrams/rss-comparison.svg" /></div><figcaption><span>相同文档集下修复前后 RSS 趋势（模拟实验数据）</span><span class="figure-links"><a href="data/rss-comparison.csv" download>模拟数据 CSV ↓</a><a href="diagrams/rss-comparison.svg" target="_blank" rel="noopener">查看大图 ↗</a></span></figcaption></figure>
+<p>“修复后 RSS 没有持续增长！”林川说道。</p>
+<p>“这才是更有力的证据。”</p>
+<p>“还需要检查资源释放是否影响解析正确性、异常分支是否也能关闭资源，以及并发解析时是否仍然稳定。”</p>
+<p>“然后再灰度发布。”</p>
+<p>陈默关闭监控页面。</p>
+<p>“这次我们不仅修好了代码，还要重新设计容器内存预算，并给原生内存增长增加告警。”</p>
+<h2 id="java-heap-oom">第六幕：另一个世界——如果真的是 Java Heap OOM 呢？</h2>
+<p>天亮以后，林川以为课程结束了。</p>
+<p>陈默却打开了一份新的事故档案。</p>
+<p>“刚才是原生内存问题。”</p>
+<p>“但 Java 面试官更喜欢问另一种情况。”</p>
+<p>“如果出现 <code>java.lang.OutOfMemoryError: Java heap space</code>，你该怎么办？”</p>
+<p>林川回答：</p>
+<p>“把 <code>-Xmx</code> 调大？”</p>
+<p>陈默看了他一眼。</p>
+<p>“你又想直接扩容了。”</p>
+<p>“……”</p>
+<p>“假设你的服务每小时泄漏 500MB 内存，8GB 堆撑不住，换成 16GB 堆就不会泄漏了吗？”</p>
+<p>“还是会，只是死得更晚。”</p>
+<p>“对。”</p>
+<p>“所以你必须先理解什么叫内存泄漏。”</p>
+<h3 id="1">1. 内存溢出与内存泄漏的区别</h3>
+<p>陈默画了一个仓库。</p>
+<p>“假设 Java 堆是一座仓库。”</p>
+<p>“正常情况下，你往里面放货物，不需要的货物会被清理出去。”</p>
+<p>“但有两种情况会让仓库爆满。”</p>
+<p>第一种：仓库确实不够大。</p>
+<p>例如业务需要同时处理一个 5GB 的数据集，但可用堆空间只有 2GB。</p>
+<p>即使程序没有泄漏，也可能 OOM。</p>
+<p>第二种：仓库里堆满了永远不会被清理的旧货。</p>
+<p>例如某个静态集合不断保存用户对象，却从来不删除。</p>
+<pre><code>public class UserCache {
+
+    private static final Map&lt;Long, User&gt; CACHE =
+        new ConcurrentHashMap&lt;&gt;();
+
+    public static void add(User user) {
+        CACHE.put(user.getId(), user);
+    }
+}
+</code></pre>
+<p>“假设用户数量持续增加，而且缓存没有容量限制、过期或清理机制，会发生什么？”</p>
+<p>“Map 会越来越大。”</p>
+<p>“GC 能回收这些 User 吗？”</p>
+<p>“不能，因为静态 Map 仍然持有它们的引用。”</p>
+<p>“这就是典型的 Java 对象滞留问题，可能构成内存泄漏。”</p>
+<h3 id="gc_1">GC 为什么不回收这些对象？</h3>
+<p>陈默继续解释：</p>
+<p>“垃圾回收器不是根据对象有没有业务价值来判断是否回收。”</p>
+<p>“而是根据对象是否仍然可达。”</p>
+<p>“只要存在从 GC Roots 到对象的引用路径，它就可能继续存活。”</p>
+<p>例如：</p>
+<figure class="architecture"><div class="diagram-frame" tabindex="0" role="region" aria-label="对象滞留引用链：存活类的静态缓存持续引用用户对象，可横向滚动"><img alt="对象滞留引用链：存活类的静态缓存持续引用用户对象" src="diagrams/gc-roots.svg" /></div><figcaption><span>对象滞留引用链：存活类的静态缓存持续引用用户对象</span><span class="figure-links"><a href="diagrams/gc-roots.svg" target="_blank" rel="noopener">查看大图 ↗</a></span></figcaption></figure>
+<p>只要仍然强可达，即使业务已经不需要这些对象，GC 也无法判断它们应被删除。</p>
+<p>林川终于理解了。</p>
+<p>“所以内存泄漏不一定是内存没有释放，而是对象已经没有业务价值，却仍然被引用着。”</p>
+<p>“准确。”</p>
+<p>“不过，注意 Java 的内存泄漏与 C/C++ 的典型内存泄漏表现可能不同。”</p>
+<h2 id="heap-dump">第七幕：Heap Dump——给内存拍一张尸检照片</h2>
+<p>“如果你怀疑 Java 堆内存泄漏，怎么找到具体对象？”</p>
+<p>陈默问。</p>
+<p>林川思考片刻：</p>
+<p>“查看 Heap Dump？”</p>
+<p>“没错。”</p>
+<p>“Heap Dump 就像给 Java 堆拍一张快照，记录堆中对象及其引用关系。”</p>
+<h3 id="1-oom">1. 提前配置 OOM 自动转储</h3>
+<pre><code>-XX:+HeapDumpOnOutOfMemoryError
+-XX:HeapDumpPath=/data/dumps
+</code></pre>
+<p>陈默提醒：</p>
+<p>“这个参数很有用，但不是万能的。”</p>
+<p>“如果是容器被内核直接 SIGKILL，通常不能指望 JVM 自动生成 Heap Dump。”</p>
+<p>“而且 Dump 文件可能很大，可能包含用户数据、Token、密码等敏感信息，必须控制磁盘空间和访问权限。”</p>
+<h3 id="2-heap-dump">2. 手动生成 Heap Dump</h3>
+<pre><code>jcmd &lt;PID&gt; GC.heap_dump /data/dumps/heap.hprof
+</code></pre>
+<p>“生产环境能随便执行吗？”林川问。</p>
+<p>“不能。生成堆转储可能造成明显停顿、I/O 压力和额外内存开销。”</p>
+<p>“应先评估实例负载、磁盘容量和业务影响，优先在可隔离实例或测试环境操作。”</p>
+<p>“而且默认情况下，这类命令可能触发 Full GC；具体行为与 JDK 版本及参数有关。”</p>
+<h3 id="3-mat">3. 使用 MAT 分析</h3>
+<p>陈默打开 Eclipse Memory Analyzer，简称 MAT。</p>
+<p>“MAT 中有几个重要概念。”</p>
+<table>
+<thead>
+<tr>
+<th>概念</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Histogram</td>
+<td>按类统计对象数量和浅堆大小</td>
+</tr>
+<tr>
+<td>Dominator Tree</td>
+<td>根据对象支配关系分析内存保留情况</td>
+</tr>
+<tr>
+<td>Shallow Heap</td>
+<td>对象本身占用的堆空间</td>
+</tr>
+<tr>
+<td>Retained Heap</td>
+<td>如果对象被移除，理论上可能释放的对象集合所占堆空间</td>
+</tr>
+<tr>
+<td>Path to GC Roots</td>
+<td>查找对象为什么仍然可达</td>
+</tr>
+</tbody>
+</table>
+<p>林川看到：</p>
+<pre><code>Class                         Objects
+-------------------------------------
+java.util.concurrent.ConcurrentHashMap$Node  2,100,000
+com.xinghai.User             1,800,000
+byte[]                         950,000
+java.lang.String             3,500,000
+</code></pre>
+<p>“User 对象这么多，是不是 User 泄漏？”</p>
+<p>“不能直接这么判断。”</p>
+<p>“对象数量多，可能是业务正常需求，也可能是异常滞留。”</p>
+<p>“要结合 Retained Heap、GC Roots 引用链、对象生命周期和业务预期。”</p>
+<p>他们打开 Dominator Tree。</p>
+<p>发现：</p>
+<pre><code>UserCache.CACHE
+  -&gt; ConcurrentHashMap
+      -&gt; Node[]
+          -&gt; User
+          -&gt; User
+          -&gt; User
+</code></pre>
+<p>“这下找到根因了。”</p>
+<p>陈默说道：</p>
+<p>“更准确地说，我们找到了大量 User 对象被保留的引用链。”</p>
+<p>“接下来还要核对：这个缓存是否应该长期保存这么多用户，以及为什么没有过期策略。”</p>
+<h2 id="oom">第八幕：五种常见 OOM，五种不同的调查方向</h2>
+<p>陈默在会议室中放下五份档案。</p>
+<p>“林川，线上内存事故不能只背 <code>Java heap space</code>。”</p>
+<p>“不同类型的 OOM，排查方向完全不同。”</p>
+<p>档案一：Java heap space</p>
+<p>堆空间无法满足对象分配。重点检查大对象、对象滞留、缓存无限增长、内存配置不足。</p>
+<p>工具：GC 日志、Heap Dump、MAT、JFR</p>
+<p>档案二：Metaspace</p>
+<p>类元数据相关的原生内存不足。重点检查动态类生成、ClassLoader 泄漏、反复热加载，以及元空间限制。</p>
+<p>工具：jcmd VM.classloader_stats、NMT、类加载指标</p>
+<p>档案三：Unable to create native thread</p>
+<p>无法创建新的原生线程。可能是线程数过多、系统线程或进程限制、原生内存不足。</p>
+<p>工具：线程数量、线程栈、ulimit、cgroup pids 指标</p>
+<p>档案四：Direct buffer memory</p>
+<p>直接缓冲区分配失败。重点检查 NIO/Netty 缓冲区、资源释放、缓冲区池以及直接内存限制。</p>
+<p>工具：BufferPoolMXBean、JFR、NMT、框架泄漏检测</p>
+<p>档案五：容器 OOMKilled</p>
+<p>容器触及内存限制并被终止。重点检查容器内存、进程 RSS、堆与原生内存、文件缓存、cgroup 事件。</p>
+<p>工具：kubectl describe、memory.stat、memory.events、进程指标</p>
+<p>“所以，”陈默说，“看见 OOM 之后，第一件事不是盲目调大内存，而是确定 OOM 的类型。”</p>
+<h2 id="_9">第九幕：生产事故中的实战决策</h2>
+<p>现在，陈默给林川一道现场题。</p>
+<p>“假设你接到告警，Java 服务内存持续增长，最终 OOM。”</p>
+<p>“你怎么排查？”</p>
+<p>林川没有立即回答。</p>
+<p>他先在纸上写下三个问题：</p>
+<p>第一，谁报的 OOM？</p>
+<p>是 JVM 抛出 <code>OutOfMemoryError</code>，还是容器 OOMKilled？</p>
+<p>第二，哪里在增长？</p>
+<p>是 Heap Used、进程 RSS、容器内存，还是某个具体原生内存区域？</p>
+<p>第三，为什么增长？</p>
+<p>是正常业务峰值、配置不足、对象滞留、原生资源泄漏，还是线程数量异常？</p>
+<p>陈默说道：</p>
+<p>“很好。现在我给你一套真实工作中可以参考的排查顺序。”</p>
+<h3 id="_10">线上内存异常排查清单</h3>
+<ol>
+<li>确认故障范围、OOM 类型与退出原因</li>
+<li>判断是否需要切流、回滚、限流或扩容止血</li>
+<li>检查容器限制、Heap Used、RSS 和内存趋势</li>
+<li>检查 GC 日志与对象分配速率</li>
+<li>针对 Heap OOM 分析 Heap Dump 与 GC Roots</li>
+<li>针对堆外增长分析 NMT、cgroup 和原生资源</li>
+<li>复现问题并验证修复方案</li>
+<li>灰度上线、观察指标并完成事故复盘</li>
+</ol>
+<h2 id="_11">第十幕：面试官的最后一道题</h2>
+<p>上午 9:30。</p>
+<p>陈默坐在会议室里。</p>
+<p>“林川，现在你来回答一道 Java 后端面试题。”</p>
+<p>“线上 Java 服务内存持续上涨，最终 OOM，你会怎么排查和解决？”</p>
+<p>林川回答：</p>
+<p>“我会按照故障分类、监控定位、现场分析、修复验证四个层次展开。”</p>
+<p>“首先判断是 JVM 抛出的 OOM，还是操作系统或容器触发的 OOMKilled。如果是容器 OOMKilled，我会检查退出原因、容器内存限制、进程 RSS 和 cgroup 内存指标。”</p>
+<p>“其次，我会查看 JVM 堆使用量、GC 次数、GC 停顿、Old Gen 使用趋势以及堆外内存情况，判断增长发生在哪个区域。”</p>
+<p>“如果是 Java Heap OOM，我会分析 GC 日志和 Heap Dump，通过 MAT 的 Dominator Tree、Retained Heap 和 Path to GC Roots 找到异常保留的对象，并结合业务逻辑判断是否存在缓存无限增长、集合未清理或大对象问题。”</p>
+<p>“如果是原生内存异常，我会结合 NMT、线程数量、直接缓冲区统计和进程内存映射，进一步检查 Direct Memory、线程栈、动态类加载或第三方原生库。”</p>
+<p>“最后根据根因采取措施，例如修复对象滞留、释放原生资源、限制缓存容量、优化批处理或调整 JVM 和容器内存预算。修复后通过压测和灰度验证内存曲线是否恢复稳定。”</p>
+<p>陈默问：</p>
+<p>“如果面试官追问：为什么你不直接调大 <code>-Xmx</code>？”</p>
+<p>林川回答：</p>
+<p>“因为调大堆只能解决部分容量不足问题，不能消除内存泄漏，而且在容器内存固定的情况下，堆越大，留给原生内存的空间可能越少，反而增加 OOMKilled 风险。”</p>
+<p>“很好。”</p>
+<p>陈默合上电脑。</p>
+<p>“现在你终于明白，为什么生产环境排查不能只会背几个 JVM 参数了。”</p>
+<h2 id="_12">本章总结：真正需要记住的五件事</h2>
+<ol>
+<li><code>-Xmx</code> 不是 Java 进程的内存上限。 堆外还有元空间、线程栈、直接内存、JVM 原生开销等。</li>
+<li>OOM 不等于内存泄漏。 容量不足、大对象、突发流量和内存滞留都可能导致 OOM。</li>
+<li>137 不一定是 OOM。 必须结合容器状态和内核或 cgroup 证据。</li>
+<li>Heap Dump 主要解决 Java 堆对象问题。 对原生内存增长，还需要 NMT、RSS、cgroup、JFR 等证据。</li>
+<li>修复的关键是找到持续增长的来源。 扩容可以止血，但不能替代根因分析。</li>
+</ol>
+<h2 id="_13">下一章预告</h2>
+<h2 id="_14">第三章：《被困住的线程——接口突然全部超时》</h2>
+<p>某天上午 10:00，星海科技的 Java 服务突然出现大规模超时。</p>
+<p>CPU 只有 15%，内存使用正常，MySQL 也没有明显异常，但所有业务请求都堵在了 Tomcat 中。</p>
+<p>林川起初怀疑数据库慢查询，随后发现 200 个 Tomcat 工作线程全部处于等待状态，而真正的凶手竟然藏在一个看似普通的 <code>synchronized</code> 方法中。</p>
+<p>下一章将通过这场事故，深入理解 Tomcat 线程池、BLOCKED/WAITING/TIMED_WAITING、Java 锁竞争、死锁、Thread Dump、数据库连接池耗尽、线程池饥饿，以及为什么 CPU 很低也能导致整个服务不可用。</p></article><nav class="chapter-nav" aria-label="章节切换"><a href="chapter-01.html" rel="prev">← 上一章</a><a href="chapter-03.html" rel="next">下一章 →</a></nav></main></div><footer>生产环境：永不熄灭的服务器<br><small>现有 4 章 · 连载中 · 第五章待续</small><p><a href="editorial.html">整理说明与技术参考</a> · <a href="https://github.com/wupzl/online-troubleshooting-reader">项目源码 ↗</a></p></footer></body></html>

@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 503" role="img" aria-labelledby="title desc">
+<title id="title">先确认谁终止了服务</title><desc id="desc">工程示意 · 按证据分析，结合实际配置验证。JVM 无法满足分配：例如 Java heap space / 内核或外部发送 SIGKILL：容器内存压力或其他强制终止；OutOfMemoryError：根据配置尝试记录异常与转储 / 进程立即终止：通常没有机会生成 JVM 堆转储；分析 Heap / 原生内存：结合 GC 日志、NMT 与对象引用 / 核对退出原因与事件：137 本身不能单独证明 OOM</desc>
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#a44b32"/></marker></defs>
+<style>text{font-family:"Microsoft YaHei","Noto Sans CJK SC",sans-serif;fill:#302b28}.detail{font-size:15px;fill:#69605b}.title{font-size:25px;font-weight:700}.label{font-size:19px;font-weight:650}</style>
+<rect width="900" height="503" rx="12" fill="#fffaf4"/>
+<text x="32" y="44" class="title">先确认谁终止了服务</text>
+<text x="32" y="76" class="detail">工程示意 · 按证据分析，结合实际配置验证</text>
+<rect x="32.0" y="108" width="409.0" height="96" rx="7" fill="#fff" stroke="#e1cec0"/>
+<text x="236.5" y="138" text-anchor="middle" class="label">JVM 无法满足分配</text>
+<text x="236.5" y="164" text-anchor="middle" class="detail">例如 Java heap space</text>
+<rect x="459.0" y="108" width="409.0" height="96" rx="7" fill="#fff" stroke="#e1cec0"/>
+<text x="663.5" y="138" text-anchor="middle" class="label">内核或外部发送 SIGKILL</text>
+<text x="663.5" y="164" text-anchor="middle" class="detail">容器内存压力或其他强制终止</text>
+<path d="M236.5 206 L236.5 230" stroke="#a44b32" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+<rect x="32.0" y="234" width="409.0" height="96" rx="7" fill="#fff" stroke="#e1cec0"/>
+<text x="236.5" y="264" text-anchor="middle" class="label">OutOfMemoryError</text>
+<text x="236.5" y="290" text-anchor="middle" class="detail">根据配置尝试记录异常与转储</text>
+<path d="M663.5 206 L663.5 230" stroke="#a44b32" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+<rect x="459.0" y="234" width="409.0" height="96" rx="7" fill="#fff" stroke="#e1cec0"/>
+<text x="663.5" y="264" text-anchor="middle" class="label">进程立即终止</text>
+<text x="663.5" y="290" text-anchor="middle" class="detail">通常没有机会生成 JVM 堆转储</text>
+<path d="M236.5 332 L236.5 356" stroke="#a44b32" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+<rect x="32.0" y="360" width="409.0" height="96" rx="7" fill="#fff" stroke="#e1cec0"/>
+<text x="236.5" y="390" text-anchor="middle" class="label">分析 Heap / 原生内存</text>
+<text x="236.5" y="416" text-anchor="middle" class="detail">结合 GC 日志、NMT 与对象引用</text>
+<path d="M663.5 332 L663.5 356" stroke="#a44b32" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+<rect x="459.0" y="360" width="409.0" height="96" rx="7" fill="#fff" stroke="#e1cec0"/>
+<text x="663.5" y="390" text-anchor="middle" class="label">核对退出原因与事件</text>
+<text x="663.5" y="416" text-anchor="middle" class="detail">137 本身不能单独证明 OOM</text>
+</svg>
