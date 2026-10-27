@@ -34,3 +34,6 @@ python verify.py
 ## 发布与续章
 
 GitHub Pages 从 `main` 分支 `/docs` 发布。新增章节时更新 `book.json`、正文与预告、连载说明及学习书架章节数，再构建与验证。所有页面保留返回书架及六项目切换入口；布局和阅读交互沿用同一书架中的阅读器。
+
+
+项目切换菜单已接入 [Agent 帝国：代码审判者](https://wupzl.github.io/coding-agent-reader/)，九章小说式 Coding Agent 工程阅读。
